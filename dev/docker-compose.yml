@@ -3,6 +3,16 @@ version: "3.1"
 
 services:
 
+  database:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 'TooSecure'
+      MYSQL_DATABASE: 'giftme'
+      MYSQL_USER: 'laravel'
+      MYSQL_PASSWORD: 'secure'
+    volumes:
+      - database:/var/lib/mysql
+
   nginx:
     image: nginx
     ports:
@@ -15,6 +25,16 @@ services:
 
   php:
     user: '1000'
-    image: php:7-fpm
+    build: ./php
+    environment:
+      DB_HOST: database
+      DB_DATABASE: giftme
+      DB_USERNAME: laravel
+      DB_PASSWORD: secure
     volumes:
       - ../code:/app
+    links:
+      - database
+
+volumes:
+  database: {}
