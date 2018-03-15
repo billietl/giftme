@@ -12,9 +12,14 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('layouts.master');
 });
 
-Route::get('/about', function () {
-    return view('about');
-});
+Route::get('/signup', 'RegisterController@create');
+Route::post('/signup', 'RegisterController@store');
+
+Route::get('/login', 'SessionController@create');
+Route::post('/login', 'SessionController@store');
+
+Route::get('/logout', 'SessionController@destroy');
+Route::post('/logout', 'SessionController@destroy');
