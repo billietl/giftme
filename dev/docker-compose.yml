@@ -14,7 +14,7 @@ services:
       - database:/var/lib/mysql
 
   nginx:
-    image: nginx
+    image: nginx:alpine
     ports:
     - "8080:80"
     volumes:
@@ -35,6 +35,12 @@ services:
       - ../code:/app
     links:
       - database
+  
+  node:
+    user: '1000'
+    build: ./node
+    volumes:
+      - ../code:/app
 
 volumes:
   database: {}
