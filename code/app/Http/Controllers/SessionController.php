@@ -8,6 +8,11 @@ use App\Http\Requests\LoginRequest;
 
 class SessionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('guest')->except('destroy');
+    }
+
     public function create()
     {
         return view('session.login');
