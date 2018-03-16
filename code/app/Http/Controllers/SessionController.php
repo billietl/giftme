@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\User;
+use App\Http\Requests\LoginRequest;
 
 class SessionController extends Controller
 {
@@ -12,13 +13,12 @@ class SessionController extends Controller
         return view('session.login');
     }
 
-    public function store()
+    public function store(LoginRequest $request)
     {
-        $this->validate(request(), [
-            'name' => 'required',
-            'password' => 'required'
-        ]);
-        $user = User::where('name', '=', request(['name']))->firstOrFail();
+        $user = User::where([
+            ['name', '=', $request->name],
+            ['password', '=', $request->password]
+        ])->first();
         auth()->login($user);
         return redirect('/');
     }
