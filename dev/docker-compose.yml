@@ -3,6 +3,11 @@ version: "3.1"
 
 services:
 
+  mailcatcher:
+    image: schickling/mailcatcher
+    ports:
+      - 1080:1080
+
   database:
     image: mysql
     environment:
@@ -31,10 +36,14 @@ services:
       DB_DATABASE: giftme
       DB_USERNAME: laravel
       DB_PASSWORD: secure
+      MAIL_DRIVER: smtp
+      MAIL_HOST: mailcatcher
+      MAIL_PORT: 1025
     volumes:
       - ../code:/app
     links:
       - database
+      - mailcatcher
   
   node:
     user: '1000'
