@@ -13,7 +13,7 @@
 
 Route::get('/', function () {
     return view('layouts.master');
-});
+})->name('home');
 
 Route::get('/signup', 'RegisterController@create');
 Route::post('/signup', 'RegisterController@store');

@@ -25,12 +25,12 @@ class SessionController extends Controller
             ['password', '=', $request->password]
         ])->first();
         auth()->login($user);
-        return redirect('/');
+        return redirect()->route('home');
     }
 
     public function destroy()
     {
         auth()->logout();
-        return redirect('/');
+        return redirect()->route('home');
     }
 }
