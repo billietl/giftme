@@ -18,11 +18,26 @@ class UserTest extends TestCase
         parent::setup();
         $this->faker = Faker::create();
     }
+    public function testNewUserCantSignupWithExistingName()
+    {
+        // Given an already signed up user
+        $existingUser = factory(User::class)->create();
+        // When I create an account with the same name
+        $newUser = factory(User::class)->make();
+        $response = $this->post('/signup', [
+            'name' => $existingUser->name,
+            'email' => $newUser->email,
+            'password' => $newUser->password,
+            'password_confirmation' => $newUser->password
+        ]);
+        // Then I have an error message about existing user name
+        $response->assertSessionHasErrors(['existingName']);
+    }
     public function testClearPasswordsAreStoredHashed()
     {
         // Given a cleartext password
         $password = $this->faker->password();
-        // When I use it to register a user
+        // When I use it to signup a user
         $user = factory(User::class)->make();
         $response = $this->post('/signup', [
             'name' => $user->name,
@@ -36,7 +51,7 @@ class UserTest extends TestCase
     }
     public function testLoggedInUserCanLogout()
     {
-        // Given I am logged in as a registered user
+        // Given I am logged in as a signuped user
         $user = factory(User::class)->create();
         auth()->login($user);
         // When I log out
@@ -48,7 +63,7 @@ class UserTest extends TestCase
     }
     public function testUserCannotLoginWithWrongPassword()
     {
-        // Given I am a registered user
+        // Given I am a signuped user
         $user = factory(User::class)->create();
         // When I log in with a correct username and a wrong password
         $response = $this->post('/login', [
@@ -70,9 +85,9 @@ class UserTest extends TestCase
         // Then I am redirected to the home page
         $response->assertRedirect('/');
     }
-    public function testAuthenticatedUserCannotSeeRegisterPage()
+    public function testAuthenticatedUserCannotSeesignupPage()
     {
-        // Given I am a registered user
+        // Given I am a signuped user
         $user = factory(User::class)->create();
         auth()->login($user);
         // and I have another acount
@@ -97,12 +112,12 @@ class UserTest extends TestCase
         // Then I am redirected to the home page
         $response->assertRedirect('/');
     }
-    public function testAuthenticatedUserCannotRegisterAgain()
+    public function testAuthenticatedUserCannotsignupAgain()
     {
-        // Given I am a registered user
+        // Given I am a signuped user
         $user = factory(User::class)->create();
         auth()->login($user);
-        // When I try to register a new account
+        // When I try to signup a new account
         $otherUser = factory(User::class)->make();
         $form = [
             "name" => $otherUser->name,
@@ -114,14 +129,5 @@ class UserTest extends TestCase
         $response->assertRedirect('/');
         // and the new account is not created
         $this->assertDatabaseMissing('users', $form);
-    }
-    /**
-     * A basic test example.
-     *
-     * @return void
-     */
-    public function testExample()
-    {
-        $this->assertTrue(true);
     }
 }
