@@ -1,12 +1,18 @@
 ---
-version: "3.1"
+version: "3.2"
 
 services:
 
   mailcatcher:
     image: schickling/mailcatcher
     ports:
-      - 1080:1080
+      - target: 1080
+        published: 1080
+        protocol: TCP
+        mode: host
+    networks:
+      - front
+      - back
 
   database:
     image: mysql
@@ -17,20 +23,25 @@ services:
       MYSQL_PASSWORD: 'secure'
     volumes:
       - database:/var/lib/mysql
+    networks:
+      - back
 
   nginx:
-    image: nginx:alpine
+    image: giftme_nginx:dev
     ports:
-    - "8080:80"
+      - target: 80
+        published: 8080
+        protocol: TCP
+        mode: host
     volumes:
       - ../code:/app
-      - ./nginx/site.conf:/etc/nginx/conf.d/default.conf
-    links:
-    - php
+    networks:
+      - front
+      - back
 
   php:
     user: '1000'
-    build: ./php
+    image: giftme_php:dev
     environment:
       DB_HOST: database
       DB_DATABASE: giftme
@@ -41,15 +52,19 @@ services:
       MAIL_PORT: 1025
     volumes:
       - ../code:/app
-    links:
-      - database
-      - mailcatcher
-  
+    networks:
+      - front
+      - back
+
   node:
     user: '1000'
-    build: ./node
+    image: giftme_node:dev
     volumes:
       - ../code:/app
 
 volumes:
   database: {}
+
+networks:
+  front:
+  back:

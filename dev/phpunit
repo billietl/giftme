@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker-compose exec php /app/vendor/phpunit/phpunit/phpunit -c /app/phpunit.xml $@
+docker exec -it $(docker ps | grep giftme_php | awk '{print $1}') /app/vendor/phpunit/phpunit/phpunit -c /app/phpunit.xml $@
