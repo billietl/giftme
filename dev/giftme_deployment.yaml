@@ -1,0 +1,240 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    app: giftme
+    service: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: giftme
+      service: nginx
+  template:
+    metadata:
+      labels:
+        app: giftme
+        service: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: giftme_nginx:dev
+          ports:
+            - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: giftme
+    service: nginx
+spec:
+  externalIPs:
+    - 192.168.99.100
+  selector:
+    app: giftme
+    service: nginx
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php
+  labels:
+    app: giftme
+    service: php
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: giftme
+      service: php
+  template:
+    metadata:
+      labels:
+        app: giftme
+        service: php
+    spec:
+      containers:
+        - name: php
+          image: giftme_php:dev
+          ports:
+            - containerPort: 9000
+          env:
+            - name: DB_HOST
+              value: mysql.default.svc.cluster.local
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql.secret
+                  key: dbname
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql.secret
+                  key: dbuser
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql.secret
+                  key: password
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php
+  labels:
+    app: giftme
+    service: php
+spec:
+  selector:
+    app: giftme
+    service: php
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 9000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: giftme
+    service: mysql
+spec:
+  selector:
+    app: giftme
+    service: mysql
+  clusterIP: None
+  ports:
+    - port: 3306
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: giftme
+    service: mysql
+spec:
+  selector:
+    matchLabels:
+      app: giftme
+      service: mysql
+  strategy: 
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: giftme
+        service: mysql
+    spec:
+      containers:
+        - image: mysql:5.7
+          name: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: ololol
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql.secret
+                  key: dbname
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql.secret
+                  key: dbuser
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql.secret
+                  key: password
+          ports:
+            - name: mysql
+              containerPort: 3306
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql.secret
+type: Opaque
+data:
+  password: 'VG9vU2VjdXJl'
+  dbname: 'Z2lmdG1l'
+  dbuser: 'bGFyYXZlbA=='
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: artisan-migrate
+  labels:
+    app: giftme
+    service: artisan-migrate
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: giftme
+        service: artisan-migrate
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: php
+          image: giftme_php:dev
+          command:
+            - php
+            - /app/artisan
+            - 'migrate:refresh'
+          env:
+            - name: DB_HOST
+              value: mysql.default.svc.cluster.local
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql.secret
+                  key: dbname
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql.secret
+                  key: dbuser
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql.secret
+                  key: password
