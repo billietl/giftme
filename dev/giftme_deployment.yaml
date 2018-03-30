@@ -1,4 +1,15 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql.credentials
+  labels:
+    app: giftme
+data:
+  dbname: 'giftme'
+  dbuser: 'laravel'
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -73,13 +84,13 @@ spec:
               value: mysql.default.svc.cluster.local
             - name: DB_DATABASE
               valueFrom:
-                secretKeyRef:
-                  name: mysql.secret
+                configMapKeyRef:
+                  name: mysql.credentials
                   key: dbname
             - name: DB_USERNAME
               valueFrom:
-                secretKeyRef:
-                  name: mysql.secret
+                configMapKeyRef:
+                  name: mysql.credentials
                   key: dbuser
             - name: DB_PASSWORD
               valueFrom:
@@ -158,16 +169,19 @@ spec:
           name: mysql
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: ololol
-            - name: MYSQL_DATABASE
               valueFrom:
                 secretKeyRef:
                   name: mysql.secret
+                  key: root-password
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: mysql.credentials
                   key: dbname
             - name: MYSQL_USER
               valueFrom:
-                secretKeyRef:
-                  name: mysql.secret
+                configMapKeyRef:
+                  name: mysql.credentials
                   key: dbuser
             - name: MYSQL_PASSWORD
               valueFrom:
@@ -193,8 +207,7 @@ metadata:
 type: Opaque
 data:
   password: 'VG9vU2VjdXJl'
-  dbname: 'Z2lmdG1l'
-  dbuser: 'bGFyYXZlbA=='
+  root-password: 'c2hpSGF0ZHVqMm9yeXVPdwo='
 
 ---
 apiVersion: batch/v1
@@ -225,13 +238,13 @@ spec:
               value: mysql.default.svc.cluster.local
             - name: DB_DATABASE
               valueFrom:
-                secretKeyRef:
-                  name: mysql.secret
+                configMapKeyRef:
+                  name: mysql.credentials
                   key: dbname
             - name: DB_USERNAME
               valueFrom:
-                secretKeyRef:
-                  name: mysql.secret
+                configMapKeyRef:
+                  name: mysql.credentials
                   key: dbuser
             - name: DB_PASSWORD
               valueFrom:
