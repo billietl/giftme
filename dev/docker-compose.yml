@@ -16,11 +16,14 @@ services:
 
   database:
     image: mysql
+    secrets:
+      - db_root_password
+      - db_user_password
     environment:
-      MYSQL_ROOT_PASSWORD: 'TooSecure'
+      MYSQL_ROOT_PASSWORD_FILE: '/run/secrets/db_root_password'
       MYSQL_DATABASE: 'giftme'
       MYSQL_USER: 'laravel'
-      MYSQL_PASSWORD: 'secure'
+      MYSQL_PASSWORD_FILE: '/run/secrets/db_user_password'
     volumes:
       - database:/var/lib/mysql
     networks:
@@ -42,11 +45,12 @@ services:
   php:
     user: '1000'
     image: giftme_php:dev
+    secrets:
+      - db_user_password
     environment:
       DB_HOST: database
       DB_DATABASE: giftme
       DB_USERNAME: laravel
-      DB_PASSWORD: secure
       MAIL_DRIVER: smtp
       MAIL_HOST: mailcatcher
       MAIL_PORT: 1025
@@ -68,3 +72,9 @@ volumes:
 networks:
   front:
   back:
+
+secrets:
+  db_root_password:
+    file: .root_passwd
+  db_user_password:
+    file: .user_passwd
