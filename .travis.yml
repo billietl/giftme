@@ -1,0 +1,30 @@
+---
+language: php
+sudo: enabled
+services:
+  - docker
+env:
+  IMAGE_NAME="louisbilliet/giftme"
+before_script:
+  - "docker -v"
+  - "docker build . -f docker_images/nginx/Dockerfile -t ${IMAGE_NAME}_nginx:${TRAVIS_BUILD_ID}"
+  - "docker build . -f docker_images/php/Dockerfile   -t ${IMAGE_NAME}_php:${TRAVIS_BUILD_ID}"
+  - "dd if=/dev/urandom count=1 bs=16 | base64 | tee dev/.root_passwd > .root_passwd"
+  - "dd if=/dev/urandom count=1 bs=16 | base64 | tee dev/.user_passwd > .user_passwd"
+  - "docker swarm init"
+script:
+  - "TAG=${TRAVIS_BUILD_ID} docker stack deploy giftme --compose-file docker-compose.yml"
+  - while [ "$(docker service ls | grep -c 1/1)" -ne "2" ]; do   sleep 5; docker service ls; done
+  - sleep 20
+  - "bash dev/artisan migrate --force --no-ansi --no-interaction"
+  - "docker exec -it $(docker ps | grep giftme_php | awk '{print $1}') /app/vendor/phpunit/phpunit/phpunit -c /app/phpunit.xml"
+after_success:
+  - docker login -u ${docker_hub_login} -p ${docker_hub_passwd}
+  - if [ ${TRAVIS_EVENT_TYPE} = 'push' ]; then docker tag ${IMAGE_NAME}_nginx:${TRAVIS_BUILD_ID} ${IMAGE_NAME}_nginx:${TRAVIS_BRANCH}; fi
+  - if [ ${TRAVIS_EVENT_TYPE} = 'push' ]; then docker tag ${IMAGE_NAME}_php:${TRAVIS_BUILD_ID}   ${IMAGE_NAME}_php:${TRAVIS_BRANCH}; fi
+  - if [ ${TRAVIS_EVENT_TYPE} = 'push' ]; then docker push ${IMAGE_NAME}_nginx:${TRAVIS_BRANCH}; fi
+  - if [ ${TRAVIS_EVENT_TYPE} = 'push' ]; then docker push ${IMAGE_NAME}_php:${TRAVIS_BRANCH}; fi
+after_script:
+  - docker stack rm giftme && sleep 20
+  - docker volume rm $(docker volume ls | grep database | awk '{print $2}')
+  - docker rmi ${IMAGE_NAME}_nginx:${TRAVIS_BUILD_ID} ${IMAGE_NAME}_nginx:${TRAVIS_BRANCH} ${IMAGE_NAME}_php:${TRAVIS_BUILD_ID} ${IMAGE_NAME}_php:${TRAVIS_BRANCH}
