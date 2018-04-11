@@ -3,17 +3,6 @@ version: "3.2"
 
 services:
 
-  mailcatcher:
-    image: schickling/mailcatcher
-    ports:
-      - target: 1080
-        published: 1080
-        protocol: TCP
-        mode: host
-    networks:
-      - front
-      - back
-
   database:
     image: mysql
     secrets:
@@ -29,23 +18,6 @@ services:
     networks:
       - back
 
-  nginx:
-    image: louisbilliet/giftme_nginx:${TAG:-dev}
-    ports:
-      - target: 80
-        published: 8080
-        protocol: TCP
-        mode: host
-    volumes:
-      - ../code:/app
-    networks:
-      - front
-      - back
-    deploy:
-      restart_policy:
-        condition: any
-        delay: 1s
-
   php:
     user: '1000'
     image: louisbilliet/giftme_php:${TAG:-dev}
@@ -58,21 +30,10 @@ services:
       MAIL_DRIVER: smtp
       MAIL_HOST: mailcatcher
       MAIL_PORT: 1025
-    volumes:
-      - ../code:/app
+      APP_KEY: "base64:Ji1Tvm/1/Z6SKny3aeajarGtcf2r7LjYFRM39f6JLtw="
     networks:
       - front
       - back
-    deploy:
-      restart_policy:
-        condition: any
-        delay: 1s
-
-  node:
-    user: '1000'
-    image: louisbilliet/giftme_node:${TAG:-dev}
-    volumes:
-      - ../code:/app
     deploy:
       restart_policy:
         condition: any
