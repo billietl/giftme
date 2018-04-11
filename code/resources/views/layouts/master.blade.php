@@ -7,7 +7,6 @@
 
         <title>GiftMe</title>
         <link href="/css/app.css" rel="stylesheet" type="text/css">
-        <link href="/css/bootstrap.css" rel="stylesheet" type="text/css">
     </head>
     <body>
         @include('layouts.navbar')
